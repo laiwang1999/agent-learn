@@ -17,7 +17,7 @@ description: Create or revise Chinese-first Agent learning Markdown and Python e
 4. 将示例中的 Python 文件名、模块名、类名、函数名、变量名、tool 名称、测试名、技术运行时标识和结构化数据键写成英文；文件名使用英文小写 `snake_case`。行内注释、块注释、tool docstring、模型提示词、用户消息和 AI 答复使用中文。
 5. 为每个教学步骤加入解释性注释。注释说明设计意图、数据流、失败原因或工程权衡，不重复解释一眼可见的赋值和语法。
 6. 为每个 tool 写完整 docstring。首句使用动词说明用户可见结果；其后必须依次包含 `Use when`、`Do not use when`、`Args`、`Returns`、`Side effects`、`Preconditions`、`Errors`、`Examples` 和 `Notes`。读取 [references/tool-docstring-template.md](references/tool-docstring-template.md) 后再实现 tool。
-7. 为纯计算、解析与校验逻辑添加不依赖模型密钥和网络的测试。运行测试和静态检查后，回读 Markdown，检查中文完整性。
+7. 为纯计算、解析与校验逻辑添加不依赖模型密钥和网络的测试；若章节核心教学目标包含模型调用、Agent loop、live streaming 或依赖模型的 middleware，还必须提供至少一个真实模型可运行示例，并在 Markdown 中分别写明离线命令与真实模型命令。运行测试和静态检查后，回读 Markdown，检查中文完整性。
 
 ## 中文约束
 
@@ -44,4 +44,5 @@ description: Create or revise Chinese-first Agent learning Markdown and Python e
 - 自定义代码示例使用英文语义命名、英文技术运行时标识和英文结构化数据键；所有模型提示词、用户消息、AI 面向用户的答复、tool docstring 与关键教学步骤注释使用中文。
 - 每个 tool 具有完整 docstring，包含固定的九个段落标题、标准成功/失败返回结构和明确错误码。
 - 测试不依赖真实 API Key、真实模型请求或不可逆副作用。
+- 依赖真实模型的章节必须在 Markdown 中提供 `.env` 配置说明、真实模型运行命令，以及无法执行时的明确说明；不得伪造模型输出。
 - 运行 `pytest`、`ruff check .` 和本 Skill 的校验器；记录无法进行的真实模型验证。

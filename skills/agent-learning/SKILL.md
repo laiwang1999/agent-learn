@@ -35,7 +35,7 @@ Do not import one framework directory from another. Put framework-neutral logic 
 5. For a code chapter, add a minimal runnable example and an expanded example under the matching `<nn>-<topic-slug>` directory. Read secrets from environment variables; do not write a real key or irreversible side effect.
 6. Before adding a helper to a chapter, inspect `src/agent_learn/shared/`. Put a component there when it has a clear cross-chapter contract; keep one-off lesson-specific logic in the chapter. Write tests for shared deterministic components.
 7. Add a dependency only when exercised. Keep model-provider integrations, framework-specific packages, and production-only packages in named optional extras.
-8. Run the relevant tests, formatter/linter if available, and a syntax/import check. State clearly if a live model run was skipped because credentials are absent.
+8. Run the relevant tests, formatter/linter if available, and a syntax/import check. For chapters that require a real-model path, verify the live example imports cleanly and document the run command; state clearly if a live model run was skipped because credentials are absent.
 
 ## Choose The Delivery
 
@@ -44,6 +44,28 @@ Deliver Markdown only when the source chapter is conceptual, architectural, comp
 Deliver Markdown and code when the chapter introduces an executable API, tool contract, state transition, workflow, persistence behavior, streaming behavior, integration boundary, or other behavior that is clearer through direct observation. Keep code focused on the new lesson and add tests only for deterministic logic.
 
 Do not use code as a completion requirement. The Markdown note is the required deliverable for every chapter; code is an additional deliverable only when it improves learning.
+
+## Require Real Model Runnable Path
+
+Deterministic offline tests remain required for pure logic, parsing, validation, and contracts that do not need provider behavior. They do not replace a live-model path when the chapter's core lesson depends on model or Agent runtime behavior.
+
+When the source chapter teaches any of the following, deliver at least one runnable example that calls a real model through environment-configured credentials:
+
+- model invocation, provider options, or structured output from an LLM
+- Agent loop behavior, including tool selection, multi-turn replies, or `return_direct`
+- live streaming, including `stream_events`, token deltas, or streamed tool-call lifecycle
+- middleware that only makes sense with a model, such as summarization, dynamic prompt shaping at runtime, or output guardrails observed on wire events
+- checkpointer-backed multi-turn memory where the lesson is continuity across invocations, not just local state shape
+
+For those chapters:
+
+1. Reuse the existing model factory and `.env` pattern; read model name, API key, timeout, and provider settings from environment variables. Never commit real keys.
+2. Keep deterministic helpers and `pytest` coverage for everything that can be verified without a model or network.
+3. In the chapter Markdown, document both paths explicitly: offline deterministic commands and the live-model command block, including required env vars and optional extras such as `openai`.
+4. Name the live example clearly in the chapter note and link to its file path.
+5. If a live model run cannot be executed in the current environment, state that fact and the missing credential or dependency. Do not fabricate model output, token streams, or usage metadata.
+
+Offline simulation is still appropriate as a supporting example when it teaches projection shapes, schema, or message contracts, but it must not be the only runnable path for a chapter whose main learning goal is observing real model or Agent behavior.
 
 ## Name Chapter Directories
 
