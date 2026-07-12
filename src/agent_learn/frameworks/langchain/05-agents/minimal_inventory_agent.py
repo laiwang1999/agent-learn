@@ -100,7 +100,7 @@ def create_inventory_agent():
         tools=[lookup_product_inventory],
         system_prompt=(
             "你是一名库存助手。回答库存问题时必须调用 lookup_product_inventory，"
-            "禁止猜测数量。商品编号缺失时必须要求用户提供编号。"
+            "禁止猜测数量。商品编号缺失时必须要求用户提供编号。最终答复必须使用中文。"
         ),
         name="inventory_agent",
     )
@@ -109,7 +109,7 @@ def create_inventory_agent():
 def main() -> None:
     agent = create_inventory_agent()
     result = agent.invoke(
-        {"messages": [{"role": "user", "content": "How many copies of book-001 are available?"}]}
+        {"messages": [{"role": "user", "content": "book-001 目前还有多少库存？"}]}
     )
     print(result["messages"][-1].content)
 

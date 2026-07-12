@@ -16,7 +16,7 @@ from .text_store import TextStore
 SYSTEM_PROMPT = """你是一名文学数据助手。
 
 关于文本的事实性结论必须使用文档工具验证，禁止猜测计数或行号。
-无法从已获取文档验证时必须明确说明。回答应保持简洁，并为每个计数或行号标注文档 ID。
+无法从已获取文档验证时必须明确说明。回答应保持简洁、使用中文，并为每个计数或行号标注文档 ID。
 """
 
 
@@ -80,8 +80,8 @@ def main() -> None:
                 {
                     "role": "user",
                     "content": (
-                        "Fetch https://www.gutenberg.org/files/64317/64317-0.txt. "
-                        "Count lines containing 'Gatsby' and give the first line containing 'Daisy'."
+                        "请获取 https://www.gutenberg.org/files/64317/64317-0.txt，"
+                        "统计包含 'Gatsby' 的行数，并给出首个包含 'Daisy' 的行号。"
                     ),
                 }
             ]

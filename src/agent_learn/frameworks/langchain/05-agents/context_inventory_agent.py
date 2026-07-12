@@ -3,12 +3,11 @@
 from dataclasses import dataclass
 
 from langchain.agents import create_agent
-from langchain.agents.middleware import dynamic_prompt
 from langchain.tools import ToolRuntime, tool
 from langgraph.checkpoint.memory import InMemorySaver
 
 from minimal_inventory_agent import create_chat_model
-
+from langchain.agents.middleware import ModelRequest, dynamic_prompt
 
 @dataclass(frozen=True, slots=True)
 class RuntimeContext:
@@ -106,14 +105,13 @@ def lookup_tenant_inventory(product_id: str, runtime: ToolRuntime[RuntimeContext
 
 
 @dynamic_prompt
-def build_permission_prompt(runtime: ToolRuntime[RuntimeContext]) -> str:
-    """根据可信运行上下文为每次模型调用生成不同的系统提示。"""
-    context = runtime.context
+def build_permission_prompt(request: ModelRequest[RuntimeContext]) -> str:
+    context = request.runtime.context
     if context is None or not context.can_view_inventory:
-        return "你是一名库存助手。当前请求未获得库存访问权限，不得调用库存查询工具。"
+        return "你是一名库存助手。当前请求未获得库存访问权限，不得调用库存查询工具。最终答复必须使用中文。"
     return (
         f"你是租户 {context.tenant_name} 的库存助手。回答库存问题时必须调用 "
-        "lookup_tenant_inventory，禁止访问其他租户的数据。"
+        "lookup_tenant_inventory，禁止访问其他租户的数据。最终答复必须使用中文。"
     )
 
 
@@ -133,7 +131,7 @@ def create_permission_inventory_agent():
 def main() -> None:
     agent = create_permission_inventory_agent()
     result = agent.invoke(
-        {"messages": [{"role": "user", "content": "How many course-001 items are available?"}]},
+        {"messages": [{"role": "user", "content": "course-001 目前还有多少库存？"}]},
         config={"configurable": {"thread_id": "learning-team-inventory-session"}},
         context=RuntimeContext(tenant_name="learning-team", can_view_inventory=True),
     )
