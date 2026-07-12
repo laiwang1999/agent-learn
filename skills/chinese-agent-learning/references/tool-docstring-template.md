@@ -1,46 +1,68 @@
-# 中文 Tool Docstring 模板
+# Tool Docstring 模板
 
-为每个可供 Agent 调用的工具使用下面的结构。按实际工具删减不适用项目，但不得省略失败行为和使用边界。
+为每个可供 Agent 调用的 tool 使用以下固定格式。保留英文段落标题，中文填写具体业务语义。不要省略不适用项目，应明确写“无”或说明不适用原因。
 
 ```python
 from langchain.tools import tool
 
 
 @tool
-def 查询城市天气(城市名称: str, 是否包含预报: bool = False) -> str:
-    """查询指定城市的天气信息，供天气问答 Agent 在用户提出天气问题时调用。
+def query_city_weather(city_name: str, include_forecast: bool = False) -> dict[str, object]:
+    """查询指定城市的当前天气或短期预报。
 
-    用途：
-        根据经过校验的中文或英文城市名称查询可信天气服务，并返回可直接用于回答的天气摘要。
-        本工具不负责推断用户所在地、不提供灾害预警，也不应被用于历史气候统计。
+    Use when:
+    - 用户明确询问某个城市的当前天气或短期预报。
+    - 已获得足以定位城市的名称与国家或地区信息。
 
-    参数：
-        城市名称：待查询的城市名称。必须是非空文本；缺少国家或地区时，调用方应先向用户确认。
-        是否包含预报：为 True 时返回未来预报；为 False 时只返回当前天气。默认值为 False。
+    Do not use when:
+    - 用户询问历史气候、灾害预警或医疗、安全决策；应使用相应领域服务或人工流程。
+    - 城市名称不明确、请求会产生高成本或需要修改外部资源；应先补充信息或审批。
 
-    返回值：
-        成功时返回中文天气摘要，其中包含城市、观测时间、温度、天气状况和数据来源。
-        城市不存在、服务超时或数据不完整时，返回以“查询失败：”开头的中文说明；调用方不得把它当作天气事实。
+    Args:
+        city_name: 待查询的城市名称。必须是非空文本；会经过首尾空白清理后传给天气服务。
+        include_forecast: 是否返回未来预报。默认 `False` 只返回当前天气；仅允许布尔值。
 
-    错误与副作用：
-        此工具会发起只读网络请求，可能受网络、限流和第三方服务可用性影响。
-        工具不会写入用户数据，也不会产生不可逆副作用；生产实现仍应设置超时、重试和审计日志。
+    Returns:
+        返回包含 `status` 的字典及其关键字段含义。
+        成功时: {"status": "success", "data": {"city": "...", "weather": "..."}}
+        失败时: {"status": "error", "error": {"code": "...", "message": "..."}}
 
-    使用边界：
-        仅当用户明确询问某个城市的当前天气或短期预报时调用。
-        城市名称缺失、问题属于气候分析或用户要求医疗/安全决策时，不调用工具并说明限制。
+    Side effects:
+    - 无。本工具只读取天气服务，不创建、修改、删除或发送外部资源。
+
+    Preconditions:
+    - `city_name` 必须可用于定位目标城市。
+    - 调用方必须具备使用天气服务的网络与服务权限。
+
+    Errors:
+    - invalid_input: `city_name` 为空，或 `include_forecast` 不是布尔值。
+    - not_found: 天气服务中找不到目标城市。
+    - permission_denied: 当前运行身份无权访问天气服务。
+    - external_service_error: 天气服务超时、限流或发生临时错误；只有只读请求才可安全重试。
+
+    Examples:
+        query_city_weather(city_name="Shanghai", include_forecast=True)
+
+    Notes:
+    - 工具是只读且幂等的；同一参数的多次调用不会修改外部状态。
+    - 返回时间应标明时区；生产实现还应记录数据来源、缓存时间和速率限制策略。
     """
-    # 先拒绝空输入，避免把无意义请求发送到外部服务并制造误导性结果。
-    if not 城市名称.strip():
-        return "查询失败：城市名称不能为空。"
+    if not city_name.strip():
+        return {
+            "status": "error",
+            "error": {"code": "invalid_input", "message": "City name is required."},
+        }
 
-    # 此处仅演示工具契约；真实项目应在适配器中调用受信任的天气服务。
-    return f"示例结果：{城市名称}当前晴朗，预报模式={是否包含预报}。"
+    return {
+        "status": "success",
+        "data": {"city": city_name.strip(), "weather": "Sunny", "include_forecast": include_forecast},
+    }
 ```
 
-## 注释标准
+## 使用规则
 
-- 在调用框架 API 前，解释该调用如何影响 Agent 的能力或状态。
-- 在异常处理分支中，解释为何返回该错误以及 Agent 应如何解释结果。
-- 在确定性计算前，解释为什么不应交给模型猜测。
-- 不为显而易见的 Python 语法添加重复注释。
+- 第一行必须以动词开头，描述用户可见结果，不描述内部实现。
+- 用 `Use when` 和 `Do not use when` 划清可调用与禁止调用边界。
+- 用稳定的 `status`、`data`、`error.code` 和 `error.message` 结构描述结果；不要用模糊字符串代替可解析失败状态。
+- 只有声明为只读且幂等的操作才可以在 `external_service_error` 时安全重试。
+- 将权限、资源存在性、金额单位、时区、分页、限流和不可逆副作用写入对应段落，不依赖模型自行推断。
