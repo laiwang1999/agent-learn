@@ -17,9 +17,9 @@ Use this layout:
 docs/chapters/<framework>/       # Chapter notes and learning exercises
 src/agent_learn/shared/          # Framework-neutral domain code and contracts
 src/agent_learn/frameworks/
-  langchain/chapter_<nn>/         # Agent, tools, middleware examples
-  langgraph/chapter_<nn>/         # Graph, state, persistence examples
-  deepagents/chapter_<nn>/        # Planning, sandbox, subagent examples
+  langchain/<nn>-<topic-slug>/    # Agent, tools, middleware examples
+  langgraph/<nn>-<topic-slug>/    # Graph, state, persistence examples
+  deepagents/<nn>-<topic-slug>/   # Planning, sandbox, subagent examples
 tests/                            # Deterministic tests without model/network access
 skills/agent-learning/           # This project-local workflow
 ```
@@ -30,11 +30,34 @@ Do not import one framework directory from another. Put framework-neutral logic 
 
 1. Read the source chapter, then inspect `docs/architecture.md` and the nearest existing chapter implementation.
 2. Classify the chapter: LangChain for configurable Agent harnesses and tools; LangGraph for explicit stateful control flow; DeepAgents for planning, filesystem work, and subagents. Do not choose a higher-level framework unless its specific capability is exercised.
-3. Add `docs/chapters/<framework>/<nn>-<slug>.md`. Include source links, goals, essential concepts, runnable commands, failure modes, and exercises. Use [references/chapter-template.md](references/chapter-template.md).
-4. Add a minimal runnable example and an expanded example under the matching `chapter_<nn>` directory. Read secrets from environment variables; do not write a real key or irreversible side effect.
-5. Move parsing, calculation, validation, and domain entities to `shared` when they can be used without the framework. Write tests for those deterministic components.
-6. Add a dependency only when exercised. Keep model-provider integrations, framework-specific packages, and production-only packages in named optional extras.
-7. Run the relevant tests, formatter/linter if available, and a syntax/import check. State clearly if a live model run was skipped because credentials are absent.
+3. Decide whether the chapter needs code before creating implementation files. Use the delivery rules below.
+4. Add `docs/chapters/<framework>/<nn>-<slug>.md`. Include source links, goals, essential concepts, runnable commands when code exists, failure modes, and exercises. Use [references/chapter-template.md](references/chapter-template.md).
+5. For a code chapter, add a minimal runnable example and an expanded example under the matching `<nn>-<topic-slug>` directory. Read secrets from environment variables; do not write a real key or irreversible side effect.
+6. Before adding a helper to a chapter, inspect `src/agent_learn/shared/`. Put a component there when it has a clear cross-chapter contract; keep one-off lesson-specific logic in the chapter. Write tests for shared deterministic components.
+7. Add a dependency only when exercised. Keep model-provider integrations, framework-specific packages, and production-only packages in named optional extras.
+8. Run the relevant tests, formatter/linter if available, and a syntax/import check. State clearly if a live model run was skipped because credentials are absent.
+
+## Choose The Delivery
+
+Deliver Markdown only when the source chapter is conceptual, architectural, comparative, operational, or retrospective; when it has no behavior that a reader can meaningfully run; or when a code example would only repeat an existing chapter without teaching a new boundary. For a Markdown-only chapter, do not create an empty chapter package, placeholder test, dependency, or artificial code sample.
+
+Deliver Markdown and code when the chapter introduces an executable API, tool contract, state transition, workflow, persistence behavior, streaming behavior, integration boundary, or other behavior that is clearer through direct observation. Keep code focused on the new lesson and add tests only for deterministic logic.
+
+Do not use code as a completion requirement. The Markdown note is the required deliverable for every chapter; code is an additional deliverable only when it improves learning.
+
+## Name Chapter Directories
+
+For every code chapter, name its implementation directory `<two-digit-number>-<topic-slug>`. Make `topic-slug` a short, lowercase, hyphen-separated English description of the chapter's actual learning topic, and use the same topic slug in the chapter Markdown filename. For example: `langchain/03-quickstart/`, `langgraph/08-persistence/`, and `deepagents/12-subagents/`.
+
+Do not use generic directory names such as `chapter_03`, `example`, `demo`, or `practice`. When a source chapter covers several ideas, name the directory after its primary new capability; place supporting examples inside that directory. Do not create a code directory for a Markdown-only chapter.
+
+## Share Cross-Chapter Components
+
+Use `src/agent_learn/shared/` as the only home for reusable learning components. Before creating or copying a helper in a chapter directory, check whether an equivalent shared component already exists.
+
+Move a component to `shared/` when two or more chapters use it, or when it is intentionally a project-wide contract such as configuration loading, domain data models, deterministic parsing or validation, test fixtures, or provider-neutral interfaces. Give shared modules topic-based names and keep their public behavior small and documented.
+
+Do not put framework-specific Agent construction, LangChain/LangGraph/DeepAgents objects, a chapter's prompt, or a one-off teaching shortcut in `shared/`. `shared/` must not import from `frameworks/`; framework chapters may import from `shared/`. Do not duplicate a shared component back into a chapter.
 
 ## Implementation Rules
 

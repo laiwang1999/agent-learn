@@ -20,7 +20,7 @@ agent_learn/
 └── tests/                         # 不依赖真实模型密钥的确定性测试
 ```
 
-`shared/` 只允许依赖 Python 标准库或明确的领域库，不能导入 LangChain、LangGraph 或 DeepAgents。每个 `frameworks/<framework>/chapter_<nn>/` 是独立的学习切片，负责将 shared 逻辑接到对应框架的 API 上。
+`shared/` 是跨章节共用组件的唯一位置，只允许依赖 Python 标准库或明确的领域库，不能导入 LangChain、LangGraph 或 DeepAgents。先检查此目录，再在章节内新增 helper；当组件被两个或更多章节使用，或它本身是项目级契约时，应放入 `shared/`。每个 `frameworks/<framework>/<nn>-<topic-slug>/` 是独立的学习切片，负责将 shared 逻辑接到对应框架的 API 上。
 
 ## 框架分工
 
@@ -31,15 +31,15 @@ agent_learn/
 | `langgraph` | 显式状态、分支、checkpoint、interrupt、streaming | 隐藏在图节点中的大型业务逻辑 |
 | `deepagents` | 长任务 planning、文件系统、subagents、权限边界 | 替代所有可用单 Agent 完成的简单任务 |
 
-LangChain 与 DeepAgents 可使用 LangGraph 提供的运行时能力，但本项目中禁止一个框架目录直接导入另一个框架目录。要复用逻辑时，先下沉到 `shared`。
+LangChain 与 DeepAgents 可使用 LangGraph 提供的运行时能力，但本项目中禁止一个框架目录直接导入另一个框架目录。章节可以导入 `shared/`，但 `shared/` 不能反向导入任何 framework；要复用逻辑时，先下沉到 `shared`。
 
 ## 新增章节的最小交付
 
 每个新增章节至少提交以下内容：
 
 1. `docs/chapters/<framework>/<nn>-<slug>.md`：来源、学习目标、重点、运行说明、失败模式和练习。
-2. `src/agent_learn/frameworks/<framework>/chapter_<nn>/`：一个最小示例和一个能说明工程边界的扩展示例。
-3. `tests/`：覆盖不需要模型或网络的确定性逻辑。
+2. 仅当章节有可观察的运行行为时，才添加 `src/agent_learn/frameworks/<framework>/<nn>-<topic-slug>/` 下的示例；纯概念章节只交付 Markdown。
+3. `tests/`：覆盖不需要模型或网络的确定性逻辑，尤其是 shared 组件。
 4. 依赖变更：仅在章节实际使用时加入，并优先放在可选依赖组。
 
 每个需要 API Key 的示例必须通过环境变量读取密钥和模型配置；密钥、用户数据和真实外部副作用不得写入示例代码或测试。
