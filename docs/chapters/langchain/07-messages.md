@@ -7,7 +7,7 @@
 
 本章把 Message 当作 Agent 上下文的基本数据结构，而不是单纯的聊天文本。完成后，你应能构造稳定的 `SystemMessage`、`HumanMessage`、`AIMessage` 与 `ToolMessage`，并验证工具结果是否准确回写到对应的 tool call。
 
-本章两个示例都只创建本地 Message 对象，不读取 API Key，也不会调用模型或网络服务。这样可以先把上下文契约、工具调用 ID 和消息顺序验证清楚，再接入真实 provider。
+本章两个离线示例创建本地 Message 对象，不读取 API Key。另提供真实模型与 Agent 示例，用于观察 provider 返回的 `AIMessage` 与完整消息历史。
 
 ## 必须掌握
 
@@ -15,7 +15,7 @@
 2. **消息历史是有序上下文**：Chat Model 通常是无状态的；每次调用都要传入需要保留的 message list。不要把权限、租户身份等可信服务端数据伪装成用户消息。
 3. **工具调用闭环**：模型请求工具时，`AIMessage.tool_calls` 中的 `id` 必须由 `ToolMessage.tool_call_id` 原样回应。见 [tool_message_flow.py](../../../src/agent_learn/frameworks/langchain/07-messages/tool_message_flow.py)。
 4. **`content` 与 `artifact` 的边界**：`ToolMessage.content` 是送回模型的紧凑结果；`artifact` 保存 UI、审计或调试需要而不应加入模型上下文的原始数据。
-5. **消息元数据不可当作权限边界**：`name`、`id`、`response_metadata` 与 `usage_metadata` 有助于追踪和成本观测，但身份认证、授权与租户隔离必须由应用层或 middleware 保证。
+5. **真实模型返回的消息结构**：直接 `model.invoke` 与 Agent `invoke` 都会在 history 中产生可观察的 `AIMessage` 与 `usage_metadata`。见 [live_model_messages.py](../../../src/agent_learn/frameworks/langchain/07-messages/live_model_messages.py)。
 
 ## 消息关系
 
@@ -36,17 +36,45 @@ SystemMessage + HumanMessage
 
 ## 运行
 
+### 离线验证（不需要 API Key）
+
 在项目根目录执行：
 
 ```powershell
-uv run python src/agent_learn/frameworks/langchain/07-messages/message_basics.py
-uv run python src/agent_learn/frameworks/langchain/07-messages/tool_message_flow.py
-uv run pytest tests/test_message_flow.py
+pip install -e ".[dev]"
+python src/agent_learn/frameworks/langchain/07-messages/message_basics.py
+python src/agent_learn/frameworks/langchain/07-messages/tool_message_flow.py
+pytest tests/test_message_flow.py
 ```
 
-第一个示例打印每条消息的 `type`、`id` 和文本内容；第二个示例打印完整的“用户请求 -> 模型工具请求 -> 工具结果 -> 中文答复”序列。它们不需要 `.env`，也不产生外部副作用。
+第一个示例打印每条消息的 `type`、`id` 和文本内容；第二个示例打印完整的“用户请求 -> 模型工具请求 -> 工具结果 -> 中文答复”序列。
 
-接入真实模型时，使用第 6 章的 [chat_model_factory.py](../../../src/agent_learn/frameworks/langchain/chat_model_factory.py) 创建模型，并把本章构造的 message list 传给 `model.invoke(messages)`。模型提示词、用户问题和最终 AI 答复都应保持中文。
+### 真实模型与 Agent（需要 `.env`）
+
+安装 OpenAI-compatible 依赖并配置根目录 `.env`：
+
+```powershell
+pip install -e ".[dev,openai]"
+```
+
+所需环境变量：
+
+```text
+DEEPSEEK_API_KEY
+DEEPSEEK_BASE_URL
+AGENT_MODEL
+AGENT_TEMPERATURE
+AGENT_TIMEOUT_SECONDS
+AGENT_MAX_TOKENS
+```
+
+运行真实模型示例：
+
+```powershell
+python src/agent_learn/frameworks/langchain/07-messages/live_model_messages.py
+```
+
+该命令会发送真实模型请求：先直接 `model.invoke` 观察 `AIMessage`，再通过 Agent 打印完整 messages 历史。若当前环境缺少 API Key，请明确说明无法执行，不要伪造输出。
 
 ## 工程判断
 

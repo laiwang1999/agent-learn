@@ -5,9 +5,9 @@
 - 教材来源：[08-langchain-tools.md](https://github.com/laiwang1999/agent-book-for-myself/blob/master/langchain/08-langchain-tools.md)
 - 官方参考：[LangChain Tools](https://docs.langchain.com/oss/python/langchain/tools)
 
-本章把 Tool 当作 Agent 采取行动的类型化接口，而不是普通 Python helper。完成后，你应能定义模型可见的 tool schema、用 `ToolRuntime` 读取服务端注入的 state 与 context、区分 string/object/`Command`/`return_direct` 等返回值语义，并在不调用模型的前提下验证 schema 与权限过滤逻辑。
+本章把 Tool 当作 Agent 采取行动的类型化接口，而不是普通 Python helper。完成后，你应能定义模型可见的 tool schema、用 `ToolRuntime` 读取服务端注入的 state 与 context，并观察真实 Agent 如何根据 schema 选择工具。
 
-本章示例优先使用本地数据与纯函数，不读取 API Key，也不会调用模型或网络服务。需要观察完整 Agent loop 时，可结合第 5 章的 `context_inventory_agent.py` 与第 6 章的模型工厂。
+离线示例用于验证 schema、权限过滤与 state 读取；真实 Agent 示例用于观察模型如何实际调用本章工具。
 
 ## 必须掌握
 
@@ -15,7 +15,7 @@
 2. **`@tool` 与高级 schema**：type hints 与 docstring 生成模型可见契约；复杂参数用 Pydantic `args_schema` 约束枚举、默认值与字段描述。
 3. **保留参数名**：`config` 与 `runtime` 不能作为模型填写的业务参数；`ToolRuntime` 由框架注入并对模型隐藏。见 [tool_state_access.py](../../../src/agent_learn/frameworks/langchain/08-tools/tool_state_access.py)。
 4. **返回值语义**：string 适合人类可读摘要，object 适合结构化推理，`Command` 用于更新 Agent state，`return_direct=True` 可在结果已完整时跳过下一次模型调用。
-5. **动态工具选择**：不是把所有工具一直暴露给模型；应按认证状态、角色或对话阶段过滤工具集合。见 [dynamic_tool_filter.py](../../../src/agent_learn/frameworks/langchain/08-tools/dynamic_tool_filter.py)。
+5. **真实 Agent 工具选择**：模型根据 tool schema 决定调用时机与参数。见 [live_catalog_agent.py](../../../src/agent_learn/frameworks/langchain/08-tools/live_catalog_agent.py)。
 
 ## 工具在 Agent 中的位置
 
@@ -30,7 +30,7 @@ agent harness 管理循环、状态、middleware 与错误恢复
 
 ## 运行
 
-在项目根目录执行：
+### 离线验证（不需要 API Key）
 
 ```powershell
 pip install -e ".[dev]"
@@ -40,9 +40,14 @@ python src/agent_learn/frameworks/langchain/08-tools/dynamic_tool_filter.py
 pytest tests/test_tool_contract.py
 ```
 
-以上命令不需要 `.env`，也不产生外部副作用。第一个示例打印工具 schema 并直接 `invoke` 工具；第二个示例演示如何从 state 读取用户偏好；第三个示例演示如何按角色过滤工具列表。
+### 真实 Agent（需要 `.env`）
 
-要把工具接入真实 Agent 时，将本章定义的工具传给第 5 章的 `create_agent`，并通过 `context` 注入可信权限，而不是让模型在参数里自行填写 `user_id` 或租户标识。
+```powershell
+pip install -e ".[dev,openai]"
+python src/agent_learn/frameworks/langchain/08-tools/live_catalog_agent.py
+```
+
+该命令会创建真实 Agent，并让模型根据 tool schema 调用 `search_lesson_catalog` 与 `get_city_weather`。环境变量要求与第 7 章相同。若无法执行真实模型调用，请明确说明缺失的配置，不要伪造工具调用结果。
 
 ## 工程判断
 

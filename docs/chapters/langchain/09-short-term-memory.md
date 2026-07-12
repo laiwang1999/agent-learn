@@ -5,17 +5,17 @@
 - 教材来源：[09-langchain-short-term-memory.md](https://github.com/laiwang1999/agent-book-for-myself/blob/master/langchain/09-langchain-short-term-memory.md)
 - 官方参考：[LangChain Short-term memory](https://docs.langchain.com/oss/python/langchain/short-term-memory)
 
-本章解释 Agent 如何在**单个 thread** 内保持上下文：checkpointer 保存 state、`thread_id` 隔离不同会话、默认 `AgentState.messages` 承载对话历史，以及历史过长时的 trim、delete、summarize 策略。完成后，你应能区分 short-term memory 与 long-term memory 的边界，并在不调用模型的前提下验证 thread 隔离、消息裁剪与历史合法性。
+本章解释 Agent 如何在**单个 thread** 内保持上下文。完成后，你应能区分 short-term memory 与 long-term memory 的边界，并在真实 Agent 多轮调用中观察 `thread_id` 与 checkpointer 的连续性。
 
-本章示例使用进程内演示存储和纯函数，不读取 API Key，也不会调用模型或网络服务。需要观察完整 Agent + checkpointer 行为时，可结合第 5 章的 `context_inventory_agent.py`。
+离线示例验证 thread 隔离、消息裁剪与历史合法性；真实 Agent 示例验证同 thread 内的多轮记忆。
 
 ## 必须掌握
 
 1. **Thread 是隔离单位**：同一 `thread_id` 共享 state，不同 thread 互不影响。见 [thread_memory_store.py](../../../src/agent_learn/frameworks/langchain/09-short-term-memory/thread_memory_store.py)。
-2. **Checkpointer 持久化 thread state**：`InMemorySaver` 适合本地学习；生产应使用 Postgres 等数据库-backed checkpointer。见第 5 章 `context_inventory_agent.py`。
+2. **Checkpointer 持久化 thread state**：`InMemorySaver` 适合本地学习；生产应使用 Postgres 等数据库-backed checkpointer。
 3. **默认 state 以 messages 为核心**：`AgentState.messages` 保存 System/Human/AI/Tool 消息序列，是短期记忆的主体。
 4. **自定义 state 字段**：通过 `state_schema` 扩展 thread 级字段，例如任务阶段、表单进度或临时偏好。见 [custom_thread_state.py](../../../src/agent_learn/frameworks/langchain/09-short-term-memory/custom_thread_state.py)。
-5. **历史管理策略**：trim 控制模型可见上下文，delete 永久移除 state 中的消息，summarize 用摘要替代早期历史；裁剪后必须保持 message 合法性。见 [message_trim_strategy.py](../../../src/agent_learn/frameworks/langchain/09-short-term-memory/message_trim_strategy.py) 与 [message_history_validator.py](../../../src/agent_learn/frameworks/langchain/09-short-term-memory/message_history_validator.py)。
+5. **真实多轮记忆**：同一 `thread_id` 的第二次 `invoke` 应能读取第一次对话内容。见 [live_thread_memory_agent.py](../../../src/agent_learn/frameworks/langchain/09-short-term-memory/live_thread_memory_agent.py)。
 
 ## 短期记忆在系统中的位置
 
@@ -31,7 +31,7 @@ tools 通过 ToolRuntime.state 读取或 Command 写入 state
 
 ## 运行
 
-在项目根目录执行：
+### 离线验证（不需要 API Key）
 
 ```powershell
 pip install -e ".[dev]"
@@ -42,9 +42,14 @@ python src/agent_learn/frameworks/langchain/09-short-term-memory/message_history
 pytest tests/test_short_term_memory.py
 ```
 
-以上命令不需要 `.env`，也不产生外部副作用。
+### 真实 Agent（需要 `.env`）
 
-接入真实 Agent 时，为 `create_agent` 传入 `checkpointer=InMemorySaver()`（或生产级 checkpointer），并在每次 `invoke` 时传入 `config={"configurable": {"thread_id": "..."}}`。
+```powershell
+pip install -e ".[dev,openai]"
+python src/agent_learn/frameworks/langchain/09-short-term-memory/live_thread_memory_agent.py
+```
+
+该命令会在同一 `thread_id` 下连续调用两次 Agent：第一轮自我介绍，第二轮询问名字。环境变量要求与第 7 章相同。
 
 ## 工程判断
 
