@@ -13,11 +13,10 @@ from langgraph.checkpoint.memory import InMemorySaver
 from .settings import AgentSettings
 from .text_store import TextStore
 
-SYSTEM_PROMPT = """You are a literary data assistant.
+SYSTEM_PROMPT = """你是一名文学数据助手。
 
-Use the document tools for factual claims about a text. Never guess counts or line positions.
-State when a value cannot be verified from a fetched document. Give concise answers and cite
-the document ID used for any count or line number.
+关于文本的事实性结论必须使用文档工具验证，禁止猜测计数或行号。
+无法从已获取文档验证时必须明确说明。回答应保持简洁，并为每个计数或行号标注文档 ID。
 """
 
 

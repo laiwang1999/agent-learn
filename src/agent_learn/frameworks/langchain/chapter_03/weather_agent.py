@@ -16,8 +16,8 @@ def create_weather_agent(settings: AgentSettings):
         model=settings.model,
         tools=[get_weather],
         system_prompt=(
-            "You are a concise weather assistant. Use the weather tool for weather questions "
-            "and clearly label its result as a demonstration forecast."
+            "你是一名简洁的天气助手。回答天气问题时必须使用天气工具，"
+            "并明确说明结果是演示用预报。"
         ),
     )
 

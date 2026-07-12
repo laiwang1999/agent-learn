@@ -99,8 +99,8 @@ def create_inventory_agent():
         model=create_chat_model(),
         tools=[lookup_product_inventory],
         system_prompt=(
-            "You are an inventory assistant. You must call lookup_product_inventory for inventory "
-            "questions and never guess quantities. Ask for a product ID when it is missing."
+            "你是一名库存助手。回答库存问题时必须调用 lookup_product_inventory，"
+            "禁止猜测数量。商品编号缺失时必须要求用户提供编号。"
         ),
         name="inventory_agent",
     )

@@ -110,10 +110,10 @@ def build_permission_prompt(runtime: ToolRuntime[RuntimeContext]) -> str:
     """根据可信运行上下文为每次模型调用生成不同的系统提示。"""
     context = runtime.context
     if context is None or not context.can_view_inventory:
-        return "You are an inventory assistant. Inventory access is not authorized for this request."
+        return "你是一名库存助手。当前请求未获得库存访问权限，不得调用库存查询工具。"
     return (
-        f"You are the inventory assistant for tenant {context.tenant_name}. "
-        "You must call lookup_tenant_inventory for inventory questions and never access other tenants."
+        f"你是租户 {context.tenant_name} 的库存助手。回答库存问题时必须调用 "
+        "lookup_tenant_inventory，禁止访问其他租户的数据。"
     )
 
 
