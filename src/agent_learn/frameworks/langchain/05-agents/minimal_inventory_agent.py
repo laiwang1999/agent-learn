@@ -2,12 +2,8 @@
 
 from langchain.agents import create_agent
 from langchain.tools import tool
-from langchain_openai import ChatOpenAI
 
-from agent_learn.shared.environment import (
-    get_required_environment_variable,
-    load_project_environment,
-)
+from agent_learn.frameworks.langchain.chat_model_factory import create_chat_model
 
 
 # 使用固定数据让工具结果可预测；真实项目应替换为受权限控制的库存服务。
@@ -76,20 +72,6 @@ def lookup_product_inventory(product_id: str) -> dict[str, object]:
         "status": "success",
         "data": {"product_id": normalized_product_id, **product},
     }
-
-
-def create_chat_model() -> ChatOpenAI:
-    """创建通过 DeepSeek OpenAI-compatible API 访问的对话模型实例。"""
-    # 在读取配置前载入本地 .env，同时保留部署环境变量的优先级。
-    load_project_environment()
-    return ChatOpenAI(
-        model=get_required_environment_variable("AGENT_MODEL"),
-        api_key=get_required_environment_variable("DEEPSEEK_API_KEY"),
-        base_url=get_required_environment_variable("DEEPSEEK_BASE_URL"),
-        temperature=float(get_required_environment_variable("AGENT_TEMPERATURE")),
-        timeout=int(get_required_environment_variable("AGENT_TIMEOUT_SECONDS")),
-        max_tokens=int(get_required_environment_variable("AGENT_MAX_TOKENS")),
-    )
 
 
 def create_inventory_agent():

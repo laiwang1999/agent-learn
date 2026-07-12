@@ -3,11 +3,11 @@
 from dataclasses import dataclass
 
 from langchain.agents import create_agent
+from langchain.agents.middleware import ModelRequest, dynamic_prompt
 from langchain.tools import ToolRuntime, tool
 from langgraph.checkpoint.memory import InMemorySaver
 
-from minimal_inventory_agent import create_chat_model
-from langchain.agents.middleware import ModelRequest, dynamic_prompt
+from agent_learn.frameworks.langchain.chat_model_factory import create_chat_model
 
 @dataclass(frozen=True, slots=True)
 class RuntimeContext:

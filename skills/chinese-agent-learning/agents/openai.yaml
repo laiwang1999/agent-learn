@@ -1,4 +1,4 @@
 interface:
-  display_name: "ÖÐÎÄ Agent ½Ì²Ä"
+  display_name: "chinese-agent-learning"
   short_description: "Create Chinese-first annotated Agent learning materials."
   default_prompt: "Use $chinese-agent-learning to create a fully Chinese annotated Agent learning chapter."
