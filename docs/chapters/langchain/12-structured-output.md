@@ -15,7 +15,7 @@
 2. **结果在 `structured_response`，不在自由文本里**：应用应读取校验后的对象，而不是解析 `AIMessage.text`。见 [structured_response_contract.py](../../../src/agent_learn/frameworks/langchain/12-structured-output/structured_response_contract.py)。
 3. **Schema 设计决定稳定性**：字段描述、枚举、可空字段与 Pydantic 约束会直接影响抽取质量。见 [contact_schemas.py](../../../src/agent_learn/frameworks/langchain/12-structured-output/contact_schemas.py)。
 4. **Validation error 是反馈边界**：格式错误可让模型重试；权限或业务规则错误不应依赖自动重试掩盖。见 [schema_validation.py](../../../src/agent_learn/frameworks/langchain/12-structured-output/schema_validation.py)。
-5. **真实 Agent 结构化抽取**：`create_agent(..., response_format=ContactInfo)` 并读取 `result["structured_response"]`。见 [live_structured_agent.py](../../../src/agent_learn/frameworks/langchain/12-structured-output/live_structured_agent.py)。
+5. **真实 Agent 结构化抽取**：`create_agent(..., response_format=ToolStrategy(ContactInfo))` 并读取 `result["structured_response"]`。DeepSeek thinking 模式不支持该策略强制使用的 `tool_choice="required"`，因此示例通过 `thinking_mode="disabled"` 显式关闭 thinking。见 [live_structured_agent.py](../../../src/agent_learn/frameworks/langchain/12-structured-output/live_structured_agent.py)。
 
 ## 结构化输出在系统中的位置
 
@@ -46,7 +46,7 @@ pip install -e ".[dev,openai]"
 python src/agent_learn/frameworks/langchain/12-structured-output/live_structured_agent.py
 ```
 
-环境变量与第 7 章相同。该命令会从用户文本中抽取 `ContactInfo`，并打印 `structured_response`。
+环境变量与第 7 章相同。该命令会从用户文本中抽取 `ContactInfo`，并打印 `structured_response`。示例会在请求参数中设置 `thinking={"type": "disabled"}`，避免 DeepSeek thinking 模式与 `ToolStrategy` 的强制 `tool_choice` 冲突。
 
 ## 工程判断
 
@@ -67,6 +67,7 @@ python src/agent_learn/frameworks/langchain/12-structured-output/live_structured
 | 应用读到的还是自然语言。 | 只看了 `messages[-1].content`。 | 读取 `structured_response`。 |
 | validation 一直重试仍失败。 | 输入本身无法映射到 schema。 | 返回用户澄清问题，而不是无限重试。 |
 | tools 与 structured output 冲突。 | provider 不支持同时启用。 | 拆成“先调工具收集证据，再结构化输出”两阶段。 |
+| thinking 模式提示不支持 `tool_choice`。 | `ToolStrategy` 会强制 `tool_choice="required"`，但当前 DeepSeek thinking 模式不接受该值。 | 对该次结构化抽取显式设置 `thinking_mode="disabled"`；不要改用 DeepSeek 当前不支持的 `json_schema` response format。 |
 | Union 同时返回多个结构。 | 输入同时含联系人与事件信息。 | 设计更完整 schema 或拆分任务。 |
 | 流式过程中解析半截 JSON。 | 在 tool call chunk 未完成时解析。 | 等 final state 的 `structured_response`。 |
 

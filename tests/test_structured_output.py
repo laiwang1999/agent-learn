@@ -1,6 +1,8 @@
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
+from agent_learn.frameworks.langchain.chat_model_factory import create_chat_model
+
 
 FRAMEWORK_ROOT = (
     Path(__file__).parents[1]
@@ -87,3 +89,20 @@ def test_build_model_retry_hint_includes_validation_message() -> None:
 
     assert "validation failed" in hint.lower()
     assert "rating must be <= 5" in hint
+
+
+def test_create_chat_model_can_disable_thinking_for_tool_strategy(monkeypatch) -> None:
+    environment = {
+        "AGENT_MODEL": "deepseek-v4-flash",
+        "DEEPSEEK_API_KEY": "test-key",
+        "DEEPSEEK_BASE_URL": "https://api.deepseek.com",
+        "AGENT_TEMPERATURE": "0.2",
+        "AGENT_TIMEOUT_SECONDS": "120",
+        "AGENT_MAX_TOKENS": "4000",
+    }
+    for variable_name, value in environment.items():
+        monkeypatch.setenv(variable_name, value)
+
+    model = create_chat_model(thinking_mode="disabled")
+
+    assert model.extra_body == {"thinking": {"type": "disabled"}}

@@ -30,7 +30,7 @@ def build_role_aware_system_prompt(context: RuntimeContext) -> str:
 
     return (
         f"你是租户 {context.tenant_name} 的编辑助手。"
-        "你可以调用读写工具完成任务，但高风险写操作必须先获得审批。"
+        "你可以调用读写工具完成任务，但高风险写操作必须先获得审批。" 
         "最终答复必须使用中文。"
     )
 
